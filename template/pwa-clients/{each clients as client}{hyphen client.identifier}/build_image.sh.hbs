@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -e
+
+IMAGE_NAME={{hyphen client.identifier}}-pwa
+PROJECT_NAME={{hyphen project.name}}
+VERSION={{client.version}}
+
+set -x
+
+yarn build
+
+docker build \
+  ./container_image \
+  -t $IMAGE_NAME:$VERSION \
+  -t gcr.io/$PROJECT_NAME/$IMAGE_NAME:$VERSION
+
+{{#unless (eq project.environment "local-dev")}}
+docker push \
+  gcr.io/$PROJECT_NAME/$IMAGE_NAME:$VERSION
+{{/unless}}

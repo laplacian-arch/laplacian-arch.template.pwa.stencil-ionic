@@ -1,0 +1,27 @@
+{{#if resource.relating_top_level_entities}}
+import { {{#each resource.relating_top_level_entities as |entity|}}{{entity.class_name}}{{#unless @last}}, {{/unless}}{{/each}} } from '../../entities'
+{{/if}}
+import { {{upper-underscore service.identifier}}_API_ENDPOINT } from '../../envitonment'
+/**
+ * The base path of this REST resoruce.
+ */
+const RESOURCE_PATH = `${ {{~upper-underscore service.identifier}}_API_ENDPOINT}{{resource.path}}`
+
+/**
+ * The interface which abstracts the detail of the way to access this REST resource.
+ */
+interface {{upper-camel resource.identifier}}Resource {
+  {{#each resource.operations as |operation|}}
+  {{lower-camel operation.name}}(): Promise<{{operation.response_body_type}}>
+  {{/each}}
+}
+
+export const {{lower-camel resource.identifier}}Resource: {{upper-camel resource.identifier}}Resource = {
+  {{#each resource.operations as |operation|}}
+  async {{lower-camel operation.name}}() {
+    const response = await fetch(`${RESOURCE_PATH}{{operation.path}}`)
+    return response.json(){{#if response_body_root}}.then(body => body.{{lower-camel response_body_root.identifier}}){{/if}}
+  }
+  {{/each}}
+}
+

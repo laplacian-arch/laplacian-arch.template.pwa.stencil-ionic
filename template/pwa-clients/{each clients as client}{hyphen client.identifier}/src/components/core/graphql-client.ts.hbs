@@ -1,0 +1,29 @@
+interface GraphqlFetchParams {
+  endpoint: string
+  query: string
+  variables?: any
+  operationName?: string
+}
+
+interface GraphqlClient {
+  fetch<T>(params: GraphqlFetchParams): Promise<T>
+}
+
+export const graphqlClient: GraphqlClient = {
+  async fetch<T>(params: GraphqlFetchParams): Promise<T> {
+    const response = await fetch(params.endpoint, {
+      method: 'post',
+      headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query: params.query,
+        variables: params.variables,
+        operationName: params.operationName,
+      }),
+      credentials: 'include',
+    })
+    return response.json()
+  }
+}

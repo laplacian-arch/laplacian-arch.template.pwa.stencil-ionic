@@ -1,0 +1,22 @@
+import { {{upper-camel action.name}}Action } from './{{hyphen action.name}}-action'
+import { INITIAL_STATE, ViewModel } from '../../../store/view-model'
+import produce from 'immer'
+
+describe('{{action.description}}', () => {
+  {{#each action.examples as |example|}}
+  it(`{{trim example.title}}`, () => {
+    const current = produce(INITIAL_STATE, (model: ViewModel) => {
+      {{shift example.given_state 6}}
+    })
+    {{#if action.params}}
+    const params = {{#if example.given_params}}{{example.given_params}}{{else}}{}{{/if}}
+    {{/if}}
+    const model = {{upper-camel action.name}}Action.reduce(current, {
+      type: {{upper-camel action.name}}Action.Type,
+      page: '{{hyphen page.name}}',
+      {{#if action.params}}...params{{/if}}
+    })
+    {{shift example.then 4}}
+  })
+  {{/each}}
+})

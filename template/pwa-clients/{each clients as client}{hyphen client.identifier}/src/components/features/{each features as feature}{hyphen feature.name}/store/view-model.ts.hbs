@@ -1,0 +1,83 @@
+import produce from 'immer'
+import { PageAction } from '../../../core/redux'
+import {
+  {{#each feature.relating_entities as |e|}}{{e.class_name}}{{#unless @last}}, {{/unless}}{{/each}}
+} from '../../../entities'
+
+export const SCHEMA = {
+  {{#each feature.state as |item|}}
+  {{#if item.entity}}
+  {{#define "schema_ref"}}{{item.entity.class_name}}.schema{{/define}}
+  {{lower-camel item.identifier}}: {{#if item.multiple}}[{{schema_ref}}]{{else}}{{schema_ref}}{{/if}},
+  {{/if}}
+  {{/each}}
+}
+
+export interface ViewModelState {
+  {{#each feature.state as |item|}}
+  /**
+   * {{item.description}}
+   */
+  {{lower-camel item.name}}: {{item.type}}
+  {{/each}}
+}
+
+export interface ViewModel extends ViewModelState {
+  {{#each feature.state_queries as |query|}}
+  {{#if query.params}}
+  {{lower-camel query.name}}(kargs: { {{#each query.params as |p|}}{{p.name}}: {{p.type}}{{#unless @last}},{{/unless}}{{/each}} }): {{query.return_type}}
+  {{else}}
+  readonly {{lower-camel query.name}}: {{query.return_type}}
+  {{/if}}
+  {{/each}}
+  {{#each feature.state_mutations as |mutation|}}
+  {{lower-camel mutation.name}}({{#if mutation.params}}kargs: { {{#each mutation.params as |p|}}{{p.name}}: {{p.type}}{{#unless @last}},{{/unless}}{{/each}} }{{/if}})
+  {{/each}}
+}
+
+const createInitialState = (): ViewModelState => {
+  return {
+    {{#each feature.state as |item|}}
+    {{lower-camel item.name}}: {{#if item.default_value}}{{trim item.default_value}}{{else}}null{{/if}},
+    {{/each}}
+  }
+}
+export const INITIAL_STATE: ViewModelState = createInitialState()
+
+export const updateModel = <T extends PageAction>(recipe: (trait: ViewModel, action: T) => void) => (model: ViewModelState, action: T): ViewModelState => {
+  return produce(model, (m) => {
+    recipe(createWrapper(m), action)
+  })
+}
+export const createWrapper = (model: ViewModelState) : ViewModel => {
+  return {
+    {{#each feature.state as |item|}}
+    get {{lower-camel item.name}}(): {{item.type}} {
+      return model.{{lower-camel item.name}}
+    },
+    set {{lower-camel item.name}}(v: {{item.type}}) {
+      model.{{lower-camel item.name}} = v
+    },
+    {{/each}}
+
+    {{#each feature.state_queries as |query|}}
+    {{#if query.params}}
+    {{lower-camel query.name}}(kargs: { {{#each query.params as |p|}}{{lower-camel p.name}}: {{p.type}}{{#unless @last}},{{/unless}}{{/each}} }): {{trim query.return_type}} {
+      const model: ViewModel = this
+      {{shift query.snippet 6}}
+    },
+    {{else}}
+    get {{lower-camel query.name}}(): {{trim query.return_type}} {
+      const model: ViewModel = this
+      {{shift query.snippet 6}}
+    },
+    {{/if}}
+    {{/each}}
+    {{#each feature.state_mutations as |mutation|}}
+    {{lower-camel mutation.name}}({{#if mutation.params}}kargs: { {{#each mutation.params as |p|}}{{lower-camel p.name}}: {{p.type}}{{#unless @last}},{{/unless}}{{/each}} }{{/if}}) {
+      const model: ViewModel = this
+      {{shift mutation.snippet 6}}
+    },
+    {{/each}}
+  }
+}

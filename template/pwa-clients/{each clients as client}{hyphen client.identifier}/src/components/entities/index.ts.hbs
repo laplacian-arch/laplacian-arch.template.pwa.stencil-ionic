@@ -1,0 +1,3 @@
+{{#each entities.top_level_in_namespace as |top_level|}}
+export { {{#each top_level.aggregated_entities as |e|}}{{e.class_name}}{{#unless @last}}, {{/unless}}{{/each}} } from './{{hyphen top_level.identifier}}'
+{{/each}}

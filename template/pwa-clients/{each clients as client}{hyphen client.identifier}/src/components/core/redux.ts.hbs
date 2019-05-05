@@ -1,0 +1,106 @@
+import { Reducer, Action, createStore, applyMiddleware, compose, combineReducers } from 'redux'
+import thunk from 'redux-thunk'
+import logger from 'redux-logger'
+import LZString from 'lz-string'
+import { normalize, denormalize } from 'normalizr'
+{{#each features as |f|}}
+import { reducer as {{lower-camel f.identifier}}Reducer } from '../features/{{hyphen f.identifier}}/store/reducer'
+import { SCHEMA as {{upper-underscore f.identifier}}_SCHEMA } from '../features/{{hyphen f.identifier}}/store/view-model'
+{{/each}}
+
+/**
+ * Defines the serialized redux state is compressed or not when it is stored in the local storage.
+ */
+const COMPRESS_STATE = false
+
+/**
+ * The key name of the data entry which contains the serialized redux state.
+ */
+const STORAGE_KEY = "tango_redux_store"
+
+/**
+ * The schema definition of the redux state.
+ */
+const normalizationSchema = {
+  {{#each features as |f|}}
+  {{lower-camel f.identifier}}: {{upper-underscore f.identifier}}_SCHEMA
+  {{/each}}
+}
+
+/**
+ * The redux action which is made in a page.
+ */
+export type PageAction = { type: string, page: string }
+
+/**
+ * The redux store creator function.
+ */
+export const configureStore = () => {
+  return createStore(
+    combineReducers({
+      {{#each features as |f|}}
+      {{lower-camel f.identifier}}: {{lower-camel f.identifier}}Reducer
+      {{/each}}
+    }),
+    {
+      {{#each features as |f|}}
+      {{lower-camel f.identifier}}: {}
+      {{/each}}
+    },
+    compose(
+      persistentStoreEnhancer,
+      applyMiddleware(thunk, logger),
+    )
+  )
+}
+
+type Normalized<T> = {result: T, entities: {[key:string]: any}}
+type NormalizingReducer<T, A extends Action> = Reducer<Normalized<T>, A>
+
+/**
+ * Create a reducer which transparently normalize/denormalize the current state of redux.
+ */
+const createNormalizingReducer = <T, A extends Action<any>>(reducer: Reducer<T, A>): NormalizingReducer<T, A> => {
+  return (normalized: Normalized<T>, action: A): Normalized<T> => {
+    const next = reducer(denormalize(normalized.result, normalizationSchema, normalized.entities), action)
+    const normalizedNext = normalize(next, normalizationSchema)
+    saveState(normalizedNext)
+    return normalizedNext
+  }
+}
+
+/**
+ * A store enhancer which transparently persists the state of the store.
+ */
+const persistentStoreEnhancer = (next) => (reducer, preloadedState) => {
+  const normalizingReducer = createNormalizingReducer<any, Action<any>>(reducer)
+  const cachedState = retrieveState()
+  const state = cachedState || { result: preloadedState, entities: {} }
+  const store = next(normalizingReducer, state)
+  return {
+    ...store,
+    getState: () => {
+      const { result, entities } = store.getState()
+      return denormalize(result, normalizationSchema, entities)
+    }
+  }
+}
+
+/**
+ * Save the given state in the local storage.
+ */
+const saveState = <T>(state: Normalized<T>) => {
+  const serialized = JSON.stringify(state)
+  localStorage.setItem(STORAGE_KEY, COMPRESS_STATE ? LZString.compress(serialized) : serialized)
+}
+
+/**
+ * Retrieve the latest redux state from the local storage.
+ */
+const retrieveState = <T>(): Normalized<T> => {
+  const raw = localStorage.getItem(STORAGE_KEY)
+  if (raw == null) return null
+  const serialized = COMPRESS_STATE ? LZString.decompress(raw) : raw
+  return JSON.parse(serialized)
+}
+

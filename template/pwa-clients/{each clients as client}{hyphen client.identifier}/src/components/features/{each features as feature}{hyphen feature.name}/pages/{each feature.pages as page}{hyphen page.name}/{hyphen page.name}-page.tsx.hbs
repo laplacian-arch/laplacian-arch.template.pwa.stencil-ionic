@@ -1,0 +1,96 @@
+import { Component, Prop, State } from '@stencil/core'
+import { Store, Action } from '@stencil/redux'
+import 'ionicons'
+import { createWrapper } from '../../store/view-model'
+{{#if features.relatingEntities}}
+import { {{#each features.relatingEntities as |e|}}{{e.class_name}}{{#unless @last}}, {{/unless}}{{/each}} } from '../../../../entities'
+{{/if}}
+import * as actions from './actions'
+
+@Component({
+  tag: '{{hyphen feature.name}}-{{hyphen page.name}}-page'
+})
+export class {{upper-camel page.name}}Page {
+  @Prop({ context: 'store' }) store: Store
+
+  {{#each page.states as |state|}}
+  @State() {{lower-camel state.name}}: {{type}}
+  {{/each}}
+
+  {{#each page.actions as |action|}}
+  {{lower-camel action.name}}: Action
+  {{/each}}
+
+  render() {
+    try {
+      return this._render()
+    }
+    catch (e) {
+      console.error(e)
+      throw e
+    }
+  }
+  _render() {
+    {{#if page.render_page_when}}
+    if (!({{trim page.render_page_when}})) {
+      return <ion-content>"loading"</ion-content>
+    }
+    {{/if}}
+    return (
+      <ion-content>
+      <ion-grid no-padding fixed>
+      {{#each page.items as |item|}}
+      <ion-row>
+        <ion-col>
+        {{#*inline "PAGE_ITEM_TAG"}}
+        <app-{{hyphen item.widget.name}}{{#unless item.widget_params}}{{#unless item.children}} /{{/unless}}>{{/unless}}
+          {{#each item.widget_params as |value|}}
+          {{lower-camel value.name}} = { {{shift value.expression 10}} }
+          {{/each}}
+          {{#each item.events as |event|}}
+          on{{upper-camel event.name}} = { e => {{shift event.expression 10}} }
+          {{/each}}
+        {{#if item.widget_params}}{{#unless item.children}}/{{/unless}}>{{/if}}
+          {{#each item.children as |item|}}
+          {{> PAGE_ITEM_TAG}}
+          {{/each}}
+        {{#if item.children}}
+        </app-{{hyphen item.widget.name}}>
+        {{/if}}
+        {{/inline}}
+        {{> PAGE_ITEM_TAG}}
+        </ion-col>
+      </ion-row>
+      {{/each}}
+      </ion-grid>
+      </ion-content>
+    )
+  }
+
+  mapStateToProps(m): any {
+    const model = createWrapper(m.{{lower-camel feature.identifier}})
+    return {
+      {{#each page.states as |state|}}
+      {{lower-camel state.name}}: {{shift state.expression 8}},
+      {{/each}}
+    }
+  }
+
+  mapDispatchToProps(): any {
+    return {
+      {{#each page.actions as |action|}}
+      {{lower-camel action.name}}: actions.{{upper-camel action.name}}Action.create,
+      {{/each}}
+    }
+  }
+
+  componentWillLoad() {
+    this.store.mapStateToProps(this, this.mapStateToProps)
+    this.store.mapDispatchToProps(this, this.mapDispatchToProps())
+    {{#each page.events as |event|}}
+    {{#if (eq event.name "before_load")}}
+    {{event.expression}}
+    {{/if}}
+    {{/each}}
+  }
+}

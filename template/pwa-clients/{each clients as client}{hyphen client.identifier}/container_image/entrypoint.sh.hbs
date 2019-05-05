@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -e
+{{#each services as |s|}}
+{{upper-underscore s.identifier}}_API_HOST=$(echo ${ {{~upper-underscore s.identifier}}_API_HOST:-"http://localhost:{{s.port}}{{s.path}}/{{s.api_version}}"} | sed -e "s#/#\\\/#g")
+{{/each}}
+
+sed -i \
+  -e "s/IMAGE_VERSION:\"[^\"]*\"/IMAGE_VERSION:\"${IMAGE_VERSION}\"/" \
+  {{#each client.services as |s|}}
+  {{#define "service_host"}}{{upper-underscore s.identifier}}_API_HOST{{/define}}
+  -e "s/{{service_host}}:\"[^\"]*\"/{{service_host}}:\"${ {{~service_host~}} }\"/" \
+  {{/each}}
+  /usr/share/nginx/html/index.html
+
+exec "$@"
+

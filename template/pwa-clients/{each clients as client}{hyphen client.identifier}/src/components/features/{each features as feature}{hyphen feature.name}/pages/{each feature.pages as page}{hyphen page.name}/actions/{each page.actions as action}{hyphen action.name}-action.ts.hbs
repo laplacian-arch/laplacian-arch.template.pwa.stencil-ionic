@@ -1,0 +1,68 @@
+{{define "api" action.rest_api_call}}
+{{define "query" action.graphql_query_call}}
+import { PageAction } from '../../../../../core/redux'
+import { updateModel } from '../../../store/view-model'
+{{#if api}}
+{{define "apiResourceId" (lower-camel api.resource.identifier)}}
+import { {{apiResourceId}}Resource } from '../../../../../api/{{hyphen api.service.identifier}}'
+{{define "relating_entities" api.operation.relating_top_level_entities}}
+{{#if relating_entities}}
+import { {{#each relating_entities as |e|}}{{e.class_name}}{{#unless @last}}, {{/unless}}{{/each}} } from '../../../../../entities'
+{{/if}}
+{{/if}}
+{{#if query}}
+import { graphqlEndpoint } from '../../../../../api/{{hyphen query.service.identifier}}'
+{{#if query.graphql_query.record_entity}}
+import { {{query.graphql_query.record_entity.class_name}} } from '../../../../../entities'
+{{/if}}
+{{/if}}
+
+/**
+ * {{trim action.description}}
+ */
+export class {{upper-camel action.name}}Action implements PageAction {
+  type: string
+  page: string
+  {{#if api}}
+  response: {{api.operation.response_body_type}}
+  {{/if}}
+  {{#if query}}
+  response: {{query.graphql_query.return_type}}
+  {{/if}}
+  {{#each action.params as |param|}}
+  {{lower-camel param.name}}: {{param.type}}
+  {{/each}}
+  static Type = '{{upper-underscore action.name}}'
+  {{#if action.params.empty}}
+  static create() {
+  {{else}}
+  static create(params: {
+    {{#each action.params as |param|}}
+    {{lower-camel param.name}}: {{param.type}}
+    {{/each}}
+  }) {
+  {{/if}}
+    return async (dispatch) => {
+      {{#if api}}
+      const response = await {{apiResourceId}}Resource.{{lower-camel api.operation.identifier}}()
+      {{/if}}
+      {{#if query}}
+      const response = await graphqlEndpoint.{{lower-camel query.name}}()
+      {{/if}}
+      const action: {{upper-camel action.name}}Action = {
+        type: {{upper-camel action.name}}Action.Type,
+        page: '{{hyphen page.name}}',
+        {{#if (or api query)}}
+        response: response,
+        {{/if}}
+        {{#each action.params as |param|}}
+        {{lower-camel param.name}}: params.{{lower-camel param.name}},
+        {{/each}}
+      }
+      dispatch(action)
+    }
+  }
+  static reduce = updateModel((model, action: {{upper-camel action.name}}Action) => {
+    {{shift action.reducer 4}}
+  })
+}

@@ -1,0 +1,27 @@
+import { Reducer } from 'redux'
+import { PageAction } from '../../../core/redux'
+import { ViewModelState, INITIAL_STATE } from './view-model'
+{{#each feature.pages as |page|}}
+import {
+  {{#each page.actions as |action|}}
+  {{upper-camel action.name}}Action,
+  {{/each}}
+} from '../pages/{{hyphen page.name}}/actions'
+{{/each}}
+
+export const reducer: Reducer<ViewModelState, PageAction> = (state = INITIAL_STATE, action) => {
+  if (!action.page) {
+    return state
+  }
+  switch (action.page) {
+    {{#each feature.pages as |page|}}
+    case '{{hyphen page.name}}': switch (action.type) {
+      {{#each page.actions as |page|}}
+      case {{upper-camel page.name}}Action.Type: return {{upper-camel page.name}}Action.reduce(state, <{{upper-camel page.name}}Action>action)
+      {{/each}}
+      default: return state
+    }
+    {{/each}}
+  }
+  return state
+}

@@ -1,0 +1,14 @@
+project:
+  group: laplacian-arch
+  type: template
+  name: pwa
+  subname: stencil-ionic
+  version: "1.0.0"
+  description: |
+    An template that generates a pwa implementation from an application-model written in laplacian-arch:client-app-arch model.
+    The generated pwa implementation is based on stencil, a web-component-powered light weight framework and ionic4 UI library.
+
+  models:
+  - group: laplacian-arch
+    name: client-app-arch
+    version: "1.0.0"

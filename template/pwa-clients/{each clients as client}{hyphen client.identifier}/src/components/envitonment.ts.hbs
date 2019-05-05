@@ -1,0 +1,8 @@
+
+const ENV = window["__ENV"]
+export const VERSION = ENV.VERSION
+{{#each services as |s|}}
+{{#define "service_id"}}{{upper-underscore s.identifier}}{{/define}}
+export const {{service_id}}_API_HOST = ENV.{{service_id}}_API_HOST
+export const {{service_id}}_API_ENDPOINT = `${ {{~service_id}}_API_HOST}{{s.path}}/{{s.api_version}}`
+{{/each}}

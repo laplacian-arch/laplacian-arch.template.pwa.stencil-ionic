@@ -1,0 +1,5 @@
+{{#each service.resources as |resource|}}
+export * from './{{hyphen resource.identifier}}-resource'
+export * from './graphql-endpoint'
+{{/each}}
+

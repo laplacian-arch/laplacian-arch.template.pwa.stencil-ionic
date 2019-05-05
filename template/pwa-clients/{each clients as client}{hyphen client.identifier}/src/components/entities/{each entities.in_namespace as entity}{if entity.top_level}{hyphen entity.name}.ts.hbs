@@ -1,0 +1,68 @@
+import { schema } from 'normalizr'
+{{#each entity.relating_top_level_entities as |relating_entity|}}
+import { {{relating_entity.class_name}} } from './{{hyphen relating_entity.identifier}}'
+{{/each}}
+/**
+ * {{trim entity.description}}
+ */
+export class {{entity.class_name}} {
+  {{#each entity.stored_properties as |property|}}
+  /**
+   * {{trim property.description}}
+   */
+  {{property.property_name}}: {{property.type}}
+  {{/each}}
+  {{#each entity.stored_relationships as |relationship|}}
+  /**
+   * {{trim relationship.description}}
+   */
+  {{relationship.property_name}}: {{relationship.reference_entity.class_name}}{{#if relationship.multiple}}[]{{/if}}
+  {{/each}}
+  /**
+   * The schema definition for data normalization.
+   */
+  static schema = new schema.Entity(
+    "{{plural entity.name}}",
+    {{#trim}}{{> SCHEMA_CONTENT ENTITY=entity}}{{/trim}},
+    {{#*inline "SCHEMA_CONTENT"}}
+    {{#unless ENTITY.stored_relationships}}
+    {}
+    {{else}}
+    {
+      {{#each ENTITY.stored_relationships as |r|}}
+      {{r.property_name}}: {{#if r.multiple}}[{{/if}}
+      {{#if r.aggregate}}
+        {{#shift width=4}}
+        {{> SCHEMA_CONTENT ENTITY=r.reference_entity}}
+        {{/shift}}
+      {{else}}
+        {{r.reference_entity.class_name}}.schema
+      {{/if}}
+      {{#if r.multiple}}]{{/if}}
+      {{/each}}
+    }{{/unless}}{{/inline}}
+    {{#if entity.primary_keys}}
+    { idAttribute: "{{lower-camel entity.primary_keys.[0].name}}" },
+    {{/if}}
+  )
+}
+{{#each entity.aggregates as |aggregate|}}
+{{define "entity" aggregate.reference_entity}}
+/**
+ * {{trim entity.description}}
+ */
+export class {{entity.class_name}} {
+  {{#each entity.stored_properties as |property|}}
+  /**
+   * {{trim property.description}}
+   */
+  {{property.property_name}}: {{property.type}}
+  {{/each}}
+  {{#each entity.stored_relationships as |relationship|}}
+  /**
+   * {{trim relationship.description}}
+   */
+  {{relationship.property_name}}: {{relationship.reference_entity.class_name}}{{#if relationship.multiple}}[]{{/if}}
+  {{/each}}
+}
+{{/each}}

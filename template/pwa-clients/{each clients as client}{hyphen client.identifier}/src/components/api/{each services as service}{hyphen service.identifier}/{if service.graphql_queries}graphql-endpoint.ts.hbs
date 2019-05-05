@@ -1,0 +1,33 @@
+import { Deck, Card } from '../../entities'
+import { graphqlClient } from '../../core/graphql-client'
+import { {{upper-underscore service.identifier}}_API_ENDPOINT } from '../../envitonment'
+
+const ENDPOINT = `${ {{~upper-underscore service.identifier}}_API_ENDPOINT}/graphql`
+
+interface GraphqlEndpoint {
+  {{#each service.graphql_queries as |query|}}
+  /**
+   * {{trim query.description}}
+   */
+  {{lower-camel query.identifier}}(): Promise<{{query.return_type}}>
+  {{/each}}
+}
+
+export const graphqlEndpoint: GraphqlEndpoint = {
+  {{#each service.graphql_queries as |query|}}
+  {{#define "result_key"}}{{plural query.record_entity.identifier}}{{/define}}
+  async {{lower-camel query.identifier}}(): Promise<{{query.return_type}}> {
+    return graphqlClient.fetch<{ {{result_key}}: {{query.return_type}} }>({
+      endpoint: ENDPOINT,
+      query:
+      `{
+        {{result_key}} {
+          {{#shift width=10}}
+          {{query.query}}
+          {{/shift}}
+        }
+      }`
+    }).then(body => body.{{result_key}})
+  }
+  {{/each}}
+}

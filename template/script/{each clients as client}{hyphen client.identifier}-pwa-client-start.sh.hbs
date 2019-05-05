@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -e
+DIR=$(cd $(dirname "$0") && pwd)
+set -x
+(cd "$DIR/../pwa-clients/{{hyphen client.identifier}}" && npm install && npm run start)
