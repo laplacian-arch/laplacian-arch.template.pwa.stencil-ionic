@@ -2,5 +2,10 @@
 #!/usr/bin/env bash
 set -e
 DIR=$(cd $(dirname "$0") && pwd)
+
 set -x
-(cd "$DIR/../pwa-clients/{{client_name}}" && npm install && npm run start)
+source $DIR/{{client_name}}-pwa-client-image-settings.sh
+
+docker tag $TAG_CURRENT $TAG_LATEST
+
+docker push $TARGET

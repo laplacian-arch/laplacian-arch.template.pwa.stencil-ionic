@@ -1,0 +1,15 @@
+{{#define "client_name"}}{{hyphen client.identifier}}{{/define}}
+#!/usr/bin/env bash
+
+set -e
+DIR=$(cd $(dirname "$0") && pwd)
+BASE_DIR=$DIR/../pwa-clients/{{client_name}}
+
+set -x
+source $DIR/{{client_name}}-pwa-client-image-settings.sh
+
+(cd $BASE_DIR && npm run build)
+
+docker build \
+  -t $TAG_CURRENT \
+  $BASE_DIR/container_image
