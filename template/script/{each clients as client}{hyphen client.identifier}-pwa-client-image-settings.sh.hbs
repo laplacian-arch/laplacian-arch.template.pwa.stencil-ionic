@@ -1,8 +1,9 @@
 {{#define "client_name"}}{{hyphen client.identifier}}{{/define}}
+{{#define "docker_hub_ns"}}{{cut (lower-underscore project.group) "_"}}{{/define}}
 #!/usr/bin/env bash
 set -e
 IMAGE_NAME={{client_name}}-pwa-client
-PROJECT_NAME=tangocube
+PROJECT_NAME={{docker_hub_ns}}
 VERSION=1.0.0
 IMAGE_REGISTRY=
 #IMAGE_REGISTRY=gcr.io/
