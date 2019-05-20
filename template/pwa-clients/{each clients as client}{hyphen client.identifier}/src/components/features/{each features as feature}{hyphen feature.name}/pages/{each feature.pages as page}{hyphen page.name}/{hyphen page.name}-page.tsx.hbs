@@ -14,7 +14,7 @@ export class {{upper-camel page.name}}Page {
   @Prop({ context: 'store' }) store: Store
 
   {{#each page.states as |state|}}
-  @State() {{lower-camel state.name}}: {{type}}
+  @State() {{lower-camel state.name}}: {{state.type}}
   {{/each}}
 
   {{#each page.actions as |action|}}
